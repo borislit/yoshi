@@ -10,7 +10,8 @@ const program = require('commander');
 const run = require('./lib/run');
 
 program
-	.parse(process.argv);
+  .option('--fix', 'fix linter errors')
+  .parse(process.argv);
 
 const {lint} = require('./lib/yoshi-plugins')(program);
 run(lint, program);
