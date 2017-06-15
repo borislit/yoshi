@@ -8,23 +8,23 @@ const mkdirp = require('mkdirp');
 
 
 function copyFiles(patterns, destination = '', base = '.') {
-  return Promise.all(patterns.map(pattern =>
-    copy(pattern, destination, path.resolve(base))));
+  return matchFiles(patterns).then(fileList =>
+    Promise.all(fileList.map(filePath =>
+      copy(filePath, destination, base))));
 }
 
-function copy(pattern, destination, base) {
-  return matchFiles(path.resolve(pattern)).then(matches =>
-    Promise.all(matches.map(match => {
-      const dest = path.resolve('dist', destination);
-      const to = path.join(dest, match.replace(base, ''));
-      return copyFile(match, to);
-    })));
+function matchFiles(patterns) {
+  return Promise.all(patterns.map(pattern => {
+    return new Promise((resolve, reject) => {
+      glob(path.resolve(pattern), (err, matches) => err ? reject(err) : resolve(matches));
+    });
+  })).then(results => results.reduce((acc, item) => acc.concat(item), []));
 }
 
-function matchFiles(pattern) {
-  return new Promise((resolve, reject) => {
-    glob(pattern, (err, matches) => err ? reject(err) : resolve(matches));
-  });
+function copy(filePath, destination, base) {
+  const dest = path.resolve('dist', destination);
+  const relative = filePath.replace(path.resolve(base), '');
+  return copyFile(filePath, path.join(dest, relative));
 }
 
 function copyFile(from, to) {
